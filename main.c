@@ -4,14 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-
+// Struct for the user input buffer
 typedef struct {
 	char* buffer;
 	size_t buffLength;
 	ssize_t inputLength;
 } InputBuffer;
 
+// Function to create new input buffer
 InputBuffer* newInputBuffer() {
 	InputBuffer* inputBuffer = (InputBuffer*)malloc(sizeof(InputBuffer));
 	inputBuffer->buffer = NULL;
@@ -21,8 +23,10 @@ InputBuffer* newInputBuffer() {
 	return inputBuffer;
 }
 
+// Prints shell prompt
 void printPrompt() { printf("(.) > "); }
 
+// Function to read input and save values to InputBuffer struct
 void readInput(InputBuffer* inputBuffer) {
 	ssize_t bytesRead = getline(&(inputBuffer->buffer), &(inputBuffer->buffLength), stdin);
 
@@ -31,10 +35,12 @@ void readInput(InputBuffer* inputBuffer) {
 		exit(EXIT_FAILURE);
 	}
 
+	// Ignore trailing newline
 	inputBuffer->inputLength = bytesRead - 1;
 	inputBuffer->buffer[bytesRead - 1] = 0;
 }
 
+// Freeing memory for buffer struct and input buffer
 void closeInputBuffer(InputBuffer* inputBuffer) {
 	free(inputBuffer->buffer);
 	free(inputBuffer);
