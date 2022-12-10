@@ -13,6 +13,19 @@ typedef struct {
 	ssize_t inputLength;
 } InputBuffer;
 
+
+// ENUMS for processing input
+
+typedef enum { META_COMMAND_SUCCESS, META_COMMAND_UNRECOGNIZED } MetaCommandResult;
+
+typedef enum { PREPARE_SUCCESS, UNRECOGNIZED_STATEMENT } PrepareResult;
+
+typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
+
+typedef struct {
+	StatementType type;
+} Statement;
+
 // Function to create new input buffer
 InputBuffer* newInputBuffer() {
 	InputBuffer* inputBuffer = (InputBuffer*)malloc(sizeof(InputBuffer));
@@ -46,6 +59,44 @@ void closeInputBuffer(InputBuffer* inputBuffer) {
 	free(inputBuffer);
 }
 
+// Function to process meta commands
+MetaCommandResult doMetaCommand(InputBuffer* inputBuffer) {
+	if (strcmp(inputBuffer->buffer, ".exit") == 0) {
+		closeInputBuffer(inputBuffer);
+		exit(EXIT_SUCCESS);
+	} else {
+		return META_COMMAND_UNRECOGNIZED;
+	}
+}
+
+// Function to identify statements
+PrepareResult prepareStatement(InputBuffer* inputBuffer, Statement* statement) {
+	// Use strncmp because input will be followed by data
+	if (strncmp(inputBuffer->buffer, "insert", 6) == 0) {
+		statement->type = STATEMENT_INSERT;
+		return PREPARE_SUCCESS;
+	}
+	if (strcmp(inputBuffer->buffer, "select") == 0) {
+		statement->type = STATEMENT_SELECT;
+		return PREPARE_SUCCESS;
+	}
+
+	return UNRECOGNIZED_STATEMENT;
+}
+
+// Function to execute statements
+void executeStatement(Statement* statement) {
+	switch (statement->type) {
+		case (STATEMENT_INSERT):
+			printf("=== INSERT ===\n");
+			break;
+		case (STATEMENT_SELECT):
+			printf("--- SELECT ---\n");
+			break;
+	}
+}
+
+
 
 int main(int argc, char* argv[]) {
 	InputBuffer* inputBuffer = newInputBuffer();
@@ -54,12 +105,28 @@ int main(int argc, char* argv[]) {
 		printPrompt();
 
 		readInput(inputBuffer);
-
-		if (strcmp(inputBuffer->buffer, "exit") == 0) {
-			closeInputBuffer(inputBuffer);
-			exit(EXIT_SUCCESS);
-		} else {
-			printf("IDK that command bro: '%s' \n", inputBuffer->buffer);
+				
+		if (inputBuffer->buffer[0] == '.') {
+			switch (doMetaCommand(inputBuffer)) {
+				case (META_COMMAND_SUCCESS):
+					continue;
+				case (META_COMMAND_UNRECOGNIZED):
+					printf("Unrecognized command: '%s'\n", inputBuffer->buffer);
+					continue;
+			}
 		}
+		
+		Statement statement;
+		switch (prepareStatement(inputBuffer, &statement)) {
+			case (PREPARE_SUCCESS):
+				break;
+			case (UNRECOGNIZED_STATEMENT):
+				printf("Unrecognized statement: '%s'.\n", inputBuffer->buffer);
+				continue;
+		}
+
+		executeStatement(&statement);
+		printf("Executed.\n");
+
 	}
 }
